@@ -1,0 +1,478 @@
+import Controlador.Conexionn;
+import Modelo.GenerarNumero;
+import Modelo.GenerarCodigos;
+import Ferreteria.Productoss;
+import java.awt.Component;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.sql.Connection;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import javax.swing.UIManager;
+import java.sql.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+import java.util.logging.*;
+import javax.swing.*;
+/**
+ *
+ * @author Admin
+ */
+public class Ventass extends javax.swing.JInternalFrame {
+
+    /**
+     * Creates new form Ventass
+     */
+    public Ventass() {
+        initComponents();
+        this.setLocation(15,15 );
+        txtFecha.setText(fechaact());
+        numeros();  
+    }
+
+    void descontarstock(String codi,String can)
+    {
+       int des = Integer.parseInt(can);
+       String cap="";
+       int desfinal;
+       String consul="SELECT * FROM producto WHERE idproducto='"+codi+"'";
+        try {
+            Statement st= cn.createStatement();
+            ResultSet rs= st.executeQuery(consul);
+            while(rs.next())
+            {
+                cap= rs.getString(3);
+            }
+            
+            
+        } catch (Exception e) {
+        }
+        desfinal=Integer.parseInt(cap)-des;
+        String modi="UPDATE producto SET cantidad='"+desfinal+"' WHERE idproducto = '"+codi+"'";
+        try {
+            PreparedStatement pst = cn.prepareStatement(modi);
+            pst.executeUpdate();
+        } catch (Exception e) {
+        }
+    
+    }
+    void numeros()
+    {
+        String c="";
+        String SQL="select max(idventa) from venta";
+        //String SQL="select count(*) from boleta";
+    //String SQL="SELECT MAX(cod_emp) AS cod_emp FROM empleado";
+     //String SQL="SELECT @@identity AS ID";
+        try {
+            Statement st = cn.createStatement();
+            ResultSet rs=st.executeQuery(SQL);
+            if(rs.next())
+            {              
+                 c=rs.getString(1);
+            }
+            if(c==null){
+                numventa.setText("00000001");
+            }
+            else{
+            int j=Integer.parseInt(c);
+            GenerarNumero gen= new GenerarNumero();
+            gen.generar(j);
+             numventa.setText(gen.serie());
+            }
+
+        } catch (SQLException ex) {
+           Logger.getLogger(Ventass.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    void calcular()
+    {
+        String pre;
+        String can;
+        double igv=0;
+        double total=0;
+        double subtotal=0;
+        double precio;
+        int cantidad;
+        double imp=0.0;
+        
+            /*can=Integer.parseInt(cant);
+            imp=pre*can;
+            dato[4]=Float.toString(imp);*/
+        
+        for(int i=0;i<jtbventas.getRowCount();i++)
+        {
+            pre=jtbventas.getValueAt(i, 2).toString();
+            can=jtbventas.getValueAt(i, 3).toString();
+            precio=Double.parseDouble(pre);
+            cantidad=Integer.parseInt(can);
+            imp=precio*cantidad;
+            subtotal=subtotal+imp;
+            
+            jtbventas.setValueAt(Math.rint(imp*100)/100, i, 4);
+            
+        }
+        precios.setText(""+Math.rint(subtotal*100)/100);           
+    }
+    void boleta(){
+       String InsertarSQL="INSERT INTO venta(idventa,cliente,total,fecha) VALUES (?,?,?,?)";
+    String numbol=numventa.getText();
+    String codcli=txtClienta.getText();
+    
+    String total=precios.getText();
+    String fecha=txtFecha.getText();
+    try {
+            PreparedStatement pst = cn.prepareStatement(InsertarSQL);
+            pst.setString(1,numbol);
+            pst.setString(2,codcli);
+            pst.setString(3,total);
+            pst.setString(4,fecha);
+           
+            int n= pst.executeUpdate();
+            if(n>0)
+            {
+                JOptionPane.showMessageDialog(null,"Los datos se guardaron correctamente");
+            }
+           
+        } catch (SQLException ex) {
+            Logger.getLogger(Ventass.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    void detalleboleta(){
+        for(int i=0;i<jtbventas.getRowCount();i++)
+        {
+        String InsertarSQL="INSERT INTO detalleventa(idventa,idproducto,descrpro,cantidad,preciou,precioven) VALUES (?,?,?,?,?,?)";
+        String numbol=numventa.getText();
+        String codpro=jtbventas.getValueAt(i, 0).toString();
+        String despro=jtbventas.getValueAt(i, 1).toString();
+        String cantpro=jtbventas.getValueAt(i, 3).toString();
+        String preunit=jtbventas.getValueAt(i, 2).toString();
+        String importe=jtbventas.getValueAt(i, 4).toString();
+    
+        try {
+            PreparedStatement pst = cn.prepareStatement(InsertarSQL);
+            pst.setString(1,numbol);
+            pst.setString(2,codpro);
+            pst.setString(3,despro);
+            pst.setString(4,cantpro);
+            pst.setString(5,preunit);
+            pst.setString(6,importe);
+          
+             pst.executeUpdate();
+          
+           
+        } catch (SQLException ex) {
+            Logger.getLogger(Ventass.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }}
+    
+    public static String fechaact(){
+    Date fecha= new Date();
+    SimpleDateFormat formatofecha= new SimpleDateFormat("dd/MMMM/YYYY");
+    return formatofecha.format(fecha);
+}
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        txtClienta = new javax.swing.JTextField();
+        txtFecha = new javax.swing.JTextField();
+        jLabel6 = new javax.swing.JLabel();
+        numventa = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
+        btnVender1 = new javax.swing.JButton();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        jtbventas = new javax.swing.JTable();
+        jPanel1 = new javax.swing.JPanel();
+        btnVender = new javax.swing.JButton();
+        btnQuitar = new javax.swing.JButton();
+        btnCancelar = new javax.swing.JButton();
+        jButton1 = new javax.swing.JButton();
+        jLabel9 = new javax.swing.JLabel();
+        precios = new javax.swing.JTextField();
+        jPanel2 = new javax.swing.JPanel();
+
+        setBackground(new java.awt.Color(51, 255, 51));
+        setClosable(true);
+        setIconifiable(true);
+        setMaximizable(true);
+        setResizable(true);
+        setTitle("VENTA");
+
+        txtClienta.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        txtClienta.setText("PUBLICO EN GENERAL");
+
+        txtFecha.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        txtFecha.setBorder(null);
+
+        jLabel6.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        jLabel6.setText("NO. VENTA:");
+
+        numventa.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        numventa.setText("NO. VENTA");
+        numventa.setToolTipText("");
+
+        jLabel4.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        jLabel4.setText("VENTA A:");
+
+        btnVender1.setBackground(new java.awt.Color(204, 204, 204));
+        btnVender1.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        btnVender1.setText("AGREGAR PRODUCTO");
+        btnVender1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnVender1ActionPerformed(evt);
+            }
+        });
+
+        jtbventas.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "Codigo", "Descripcion", "Precio unitario", "Cantidad", "Precio total"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+        });
+        jScrollPane1.setViewportView(jtbventas);
+
+        jPanel1.setBackground(new java.awt.Color(0, 255, 51));
+        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        btnVender.setText("REALIZAR VENTA");
+        btnVender.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnVenderActionPerformed(evt);
+            }
+        });
+        jPanel1.add(btnVender, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 10, -1, -1));
+
+        btnQuitar.setText("QUITAR");
+        btnQuitar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnQuitarActionPerformed(evt);
+            }
+        });
+        jPanel1.add(btnQuitar, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 90, -1, -1));
+
+        btnCancelar.setText("CANCELAR");
+        btnCancelar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCancelarActionPerformed(evt);
+            }
+        });
+        jPanel1.add(btnCancelar, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 140, -1, -1));
+
+        jButton1.setText("REALIZAR CALCULO");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+        jPanel1.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(10, 50, -1, -1));
+
+        jLabel9.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        jLabel9.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        jLabel9.setText("TOTAL A PAGAR: $");
+
+        precios.setFont(new java.awt.Font("Tahoma", 0, 14)); // NOI18N
+
+        jPanel2.setBackground(new java.awt.Color(0, 255, 51));
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 773, Short.MAX_VALUE)
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 474, Short.MAX_VALUE)
+        );
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addGap(133, 133, 133)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jLabel4)
+                    .addComponent(jLabel6))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(txtClienta, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(numventa))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(txtFecha, javax.swing.GroupLayout.PREFERRED_SIZE, 167, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 141, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 616, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(btnVender1)
+                .addGap(0, 0, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jLabel9)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(precios, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(24, 24, 24))
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(27, 27, 27)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(txtClienta, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel4))
+                        .addGap(18, 18, 18)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel6)
+                            .addComponent(numventa)))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(35, 35, 35)
+                        .addComponent(txtFecha, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addGap(30, 30, 30)
+                .addComponent(btnVender1)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 263, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(precios, javax.swing.GroupLayout.DEFAULT_SIZE, 25, Short.MAX_VALUE)
+                            .addComponent(jLabel9))
+                        .addGap(3, 3, 3))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 190, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        pack();
+    }// </editor-fold>                        
+
+    private void btnVender1ActionPerformed(java.awt.event.ActionEvent evt) {                                           
+        // TODO add your handling code here:
+        //        insertardatos();
+        //        limpiartextfiel();
+        //        mostrartabla();
+//        Productoss e=new Productoss();
+//        e.setVisible(true);
+
+        try {
+            Productoss pro= new Productoss();
+            Principalventa.jDesktopPane1.add(pro);
+            pro.toFront();
+            pro.setVisible(true);
+            } catch (Exception e) {
+                
+                }
+    }                                          
+
+    private void btnVenderActionPerformed(java.awt.event.ActionEvent evt) {                                          
+        // TODO add your handling code here:
+        if((txtClienta.getText().equals(""))||(precios.getText().equals(""))){
+            JOptionPane.showMessageDialog(this, "Ingrese cliente, producto o realice operacion");
+        }
+        else{
+            String capcod="",capcan="";
+            for(int i=0;i<Ventass.jtbventas.getRowCount();i++)
+            {
+                capcod=Ventass.jtbventas.getValueAt(i, 0).toString();
+                capcan=Ventass.jtbventas.getValueAt(i, 3).toString();
+                descontarstock(capcod, capcan);
+            }
+            boleta();
+            detalleboleta();
+            //    txtcod.setText("");
+            //        txtnomape.setText("");
+            //        txtdni.setText("");
+            //        txtdire.setText("");
+            //        txttotal.setText("");
+            precios.setText("");
+
+            DefaultTableModel modelo = (DefaultTableModel) jtbventas.getModel();
+            int a =jtbventas.getRowCount()-1;
+            int i;
+            for(i=a;i>=0;i--)
+            {
+                modelo.removeRow(i);
+            }
+            numeros();
+        }
+    }                                         
+
+    private void btnQuitarActionPerformed(java.awt.event.ActionEvent evt) {                                          
+        // TODO add your handling code here:
+        DefaultTableModel model = (DefaultTableModel) jtbventas.getModel();
+        int fila = jtbventas.getSelectedRow();
+        if(fila>=0)
+        {
+            model.removeRow(fila);
+        }
+        else
+        {
+            JOptionPane.showMessageDialog(null, "Tabla vacia o no seleccione ninguna fila");
+        }
+    }                                         
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {                                         
+        // TODO add your handling code here:
+        if(jtbventas.getRowCount()<1)
+        {
+            JOptionPane.showMessageDialog(this, "ingrese algun producto");
+        }
+        else
+        {
+            calcular();
+        }
+    }                                        
+
+    private void btnCancelarActionPerformed(java.awt.event.ActionEvent evt) {                                            
+        // TODO add your handling code here:
+        this.dispose();
+    }                                           
+ 
+
+    // Variables declaration - do not modify                     
+    private javax.swing.JButton btnCancelar;
+    private javax.swing.JButton btnQuitar;
+    private javax.swing.JButton btnVender;
+    private javax.swing.JButton btnVender1;
+    private javax.swing.JButton jButton1;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel9;
+    private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JScrollPane jScrollPane1;
+    public static javax.swing.JTable jtbventas;
+    private javax.swing.JLabel numventa;
+    private javax.swing.JTextField precios;
+    public static javax.swing.JTextField txtClienta;
+    public static javax.swing.JTextField txtFecha;
+    // End of variables declaration                   
+Conexionn con=new Conexionn();
+Connection cn=con.Conexionn();
